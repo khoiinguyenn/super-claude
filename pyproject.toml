@@ -1,0 +1,10 @@
+[project]
+name = "super-claude"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "superclaude>=3.0.0.2",
+    "flask>=2.0.0",
+]

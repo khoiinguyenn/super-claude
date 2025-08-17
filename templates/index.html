@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="sticky-note">
+    <div class="note-title">To-Do</div>
+    
+    {% if tasks %}
+        {% for task in tasks %}
+        <div class="todo-item">
+            <input type="checkbox" 
+                   class="todo-checkbox" 
+                   {% if task.status.value == "✅" %}checked{% endif %}
+                   onchange="toggleTask({{ task.id }}, this)">
+            <span class="todo-text {% if task.status.value == '✅' %}completed{% endif %}">
+                {{ task.title }}
+            </span>
+            <button class="delete-btn" onclick="deleteTask({{ task.id }})" title="Delete">×</button>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-state">
+            No tasks yet ✨
+        </div>
+    {% endif %}
+    
+    <form class="add-todo" onsubmit="addTask(this, event)">
+        <input type="text" class="add-input" placeholder="Add task..." required>
+        <button type="submit" class="add-btn">+</button>
+    </form>
+</div>
+{% endblock %}

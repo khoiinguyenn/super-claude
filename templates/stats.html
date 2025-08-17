@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+
+{% block title %}Statistics - Task & Habit Tracker{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4"><i class="fas fa-chart-bar me-2"></i>Statistics</h1>
+    </div>
+</div>
+
+<!-- Overview Stats -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card text-center stats-card">
+            <div class="card-body">
+                <i class="fas fa-tasks fa-2x mb-2"></i>
+                <h3 class="display-6">{{ total_tasks }}</h3>
+                <p class="mb-0">Total Tasks</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-center bg-success text-white">
+            <div class="card-body">
+                <i class="fas fa-check fa-2x mb-2"></i>
+                <h3 class="display-6">{{ completed_tasks }}</h3>
+                <p class="mb-0">Completed Tasks</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-center bg-warning text-white">
+            <div class="card-body">
+                <i class="fas fa-fire fa-2x mb-2"></i>
+                <h3 class="display-6">{{ total_habits }}</h3>
+                <p class="mb-0">Active Habits</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-center bg-info text-white">
+            <div class="card-body">
+                <i class="fas fa-trophy fa-2x mb-2"></i>
+                <h3 class="display-6">{{ avg_streak|round(1) }}</h3>
+                <p class="mb-0">Avg Streak</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Task Completion Rate -->
+<div class="row mb-4">
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0"><i class="fas fa-percentage me-2"></i>Task Completion Rate</h5>
+            </div>
+            <div class="card-body">
+                {% if total_tasks > 0 %}
+                    {% set completion_rate = (completed_tasks / total_tasks * 100) %}
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Overall Progress</span>
+                        <span>{{ completion_rate|round(1) }}%</span>
+                    </div>
+                    <div class="progress mb-3" style="height: 20px;">
+                        <div class="progress-bar" style="width: {{ completion_rate }}%"></div>
+                    </div>
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <h4 class="text-success">{{ completed_tasks }}</h4>
+                            <small class="text-muted">Completed</small>
+                        </div>
+                        <div class="col-6">
+                            <h4 class="text-warning">{{ total_tasks - completed_tasks }}</h4>
+                            <small class="text-muted">Remaining</small>
+                        </div>
+                    </div>
+                {% else %}
+                    <p class="text-muted text-center">No tasks to analyze yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Habit Performance -->
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0"><i class="fas fa-chart-line me-2"></i>Habit Performance</h5>
+            </div>
+            <div class="card-body">
+                {% if habits %}
+                    {% for habit in habits %}
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <small>{{ habit.name }}</small>
+                            <small>{{ habit.current_streak }}/{{ habit.target_days }} days</small>
+                        </div>
+                        {% set progress = ((habit.current_streak / habit.target_days * 100) if (habit.current_streak / habit.target_days * 100) < 100 else 100) %}
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar" style="width: {{ progress }}%"></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted text-center">No habits to analyze yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Task Priority Breakdown -->
+<div class="row mb-4">
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0"><i class="fas fa-chart-pie me-2"></i>Tasks by Priority</h5>
+            </div>
+            <div class="card-body">
+                {% if tasks %}
+                    {% set high_tasks = tasks|selectattr("priority.value", "equalto", "🔴")|list %}
+                    {% set medium_tasks = tasks|selectattr("priority.value", "equalto", "🟡")|list %}
+                    {% set low_tasks = tasks|selectattr("priority.value", "equalto", "🟢")|list %}
+                    
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>🔴 High Priority</span>
+                            <span>{{ high_tasks|length }}</span>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-danger" style="width: {{ (high_tasks|length / total_tasks * 100) if total_tasks else 0 }}%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>🟡 Medium Priority</span>
+                            <span>{{ medium_tasks|length }}</span>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-warning" style="width: {{ (medium_tasks|length / total_tasks * 100) if total_tasks else 0 }}%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>🟢 Low Priority</span>
+                            <span>{{ low_tasks|length }}</span>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-success" style="width: {{ (low_tasks|length / total_tasks * 100) if total_tasks else 0 }}%"></div>
+                        </div>
+                    </div>
+                {% else %}
+                    <p class="text-muted text-center">No tasks to analyze yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Best Performing Habits -->
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0"><i class="fas fa-star me-2"></i>Top Performing Habits</h5>
+            </div>
+            <div class="card-body">
+                {% if habits %}
+                    {% set sorted_habits = habits|sort(attribute='current_streak', reverse=true) %}
+                    {% for habit in sorted_habits[:5] %}
+                    <div class="d-flex justify-content-between align-items-center mb-2 p-2 rounded bg-light">
+                        <div>
+                            <strong>{{ habit.name }}</strong>
+                            <br>
+                            <small class="text-muted">Best: {{ habit.longest_streak }} days</small>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-primary">{{ habit.current_streak }} days</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted text-center">No habits to analyze yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0"><i class="fas fa-clock me-2"></i>Recent Activity</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-lg-6">
+                        <h6>Recently Completed Tasks</h6>
+                        {% set completed_tasks_list = tasks|selectattr("status.value", "equalto", "✅")|list %}
+                        {% if completed_tasks_list %}
+                            {% for task in completed_tasks_list[:5] %}
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="me-2">✅</span>
+                                <div>
+                                    <strong>{{ task.title }}</strong>
+                                    {% if task.completed_at %}
+                                    <br><small class="text-muted">{{ task.completed_at[:10] }}</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted">No completed tasks yet.</p>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-lg-6">
+                        <h6>Active Habits Summary</h6>
+                        {% if habits %}
+                            {% for habit in habits[:5] %}
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span>🔥 {{ habit.name }}</span>
+                                <span class="badge bg-warning">{{ habit.current_streak }} day streak</span>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted">No active habits yet.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

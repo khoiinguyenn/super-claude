@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block title %}Habits - Task & Habit Tracker{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="fas fa-fire me-2"></i>Habits</h1>
+            <button class="btn btn-warning btn-custom" data-bs-toggle="modal" data-bs-target="#addHabitModal">
+                <i class="fas fa-plus me-2"></i>Add Habit
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Habits List -->
+<div class="row">
+    {% if habits %}
+        {% for habit in habits %}
+        <div class="col-lg-6 mb-4">
+            <div class="card habit-item h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h5 class="card-title">🔥 {{ habit.name }}</h5>
+                        <div class="dropdown">
+                            <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="dropdown">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a class="dropdown-item" href="{{ url_for('complete_habit_form', habit_name=habit.name) }}">
+                                        <i class="fas fa-check me-2"></i>Mark Complete
+                                    </a>
+                                </li>
+                                <li>
+                                    <button class="dropdown-item text-danger" onclick="deleteHabit('{{ habit.name }}')">
+                                        <i class="fas fa-trash me-2"></i>Delete
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    {% if habit.description %}
+                    <p class="text-muted">{{ habit.description }}</p>
+                    {% endif %}
+                    
+                    <!-- Progress -->
+                    <div class="mb-3">
+                        {% set progress = ((habit.current_streak / habit.target_days * 100) if (habit.current_streak / habit.target_days * 100) < 100 else 100) %}
+                        <div class="d-flex justify-content-between mb-1">
+                            <small class="text-muted">Progress</small>
+                            <small class="text-muted">{{ progress|round(1) }}%</small>
+                        </div>
+                        <div class="progress" style="height: 12px;">
+                            <div class="progress-bar" style="width: {{ progress }}%"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Stats -->
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <div class="border-end">
+                                <h6 class="text-primary mb-0">{{ habit.current_streak }}</h6>
+                                <small class="text-muted">Current</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="border-end">
+                                <h6 class="text-success mb-0">{{ habit.longest_streak }}</h6>
+                                <small class="text-muted">Best</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <h6 class="text-warning mb-0">{{ habit.target_days }}</h6>
+                            <small class="text-muted">Target</small>
+                        </div>
+                    </div>
+                    
+                    <!-- Action Button -->
+                    <div class="text-center mt-3">
+                        <a href="{{ url_for('complete_habit_form', habit_name=habit.name) }}" 
+                           class="btn btn-success btn-custom">
+                            <i class="fas fa-check me-2"></i>Mark Complete Today
+                        </a>
+                    </div>
+                    
+                    <!-- Recent Activity -->
+                    {% if habit.completed_dates %}
+                    <div class="mt-3">
+                        <small class="text-muted">Recent activity:</small>
+                        <div class="d-flex flex-wrap gap-1 mt-1">
+                            {% for date in habit.completed_dates[-7:] %}
+                                <span class="badge bg-success">{{ date }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-seedling fa-4x text-muted mb-4"></i>
+                    <h3 class="text-muted">No habits yet!</h3>
+                    <p class="text-muted">Start building better habits today.</p>
+                    <button class="btn btn-warning btn-lg btn-custom" data-bs-toggle="modal" data-bs-target="#addHabitModal">
+                        <i class="fas fa-plus me-2"></i>Create Your First Habit
+                    </button>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Add Habit Modal -->
+<div class="modal fade" id="addHabitModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Habit</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('add_habit_form') }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Habit Name *</label>
+                        <input type="text" class="form-control" id="name" name="name" required
+                               placeholder="e.g., Daily Exercise, Read for 30 minutes">
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"
+                                  placeholder="What does this habit involve?"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="target_days" class="form-label">Target Days</label>
+                        <select class="form-select" id="target_days" name="target_days">
+                            <option value="7">1 Week (7 days)</option>
+                            <option value="14">2 Weeks (14 days)</option>
+                            <option value="21">3 Weeks (21 days)</option>
+                            <option value="30" selected>1 Month (30 days)</option>
+                            <option value="60">2 Months (60 days)</option>
+                            <option value="90">3 Months (90 days)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">Create Habit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function deleteHabit(habitName) {
+    if (confirm(`Are you sure you want to delete the habit "${habitName}"?`)) {
+        try {
+            const result = await apiCall(`/api/habit/${encodeURIComponent(habitName)}/delete`, 'DELETE');
+            if (result.success) {
+                showMessage('Habit deleted successfully!', 'success');
+                location.reload();
+            } else {
+                showMessage(result.error || 'Failed to delete habit', 'danger');
+            }
+        } catch (error) {
+            showMessage('Error deleting habit', 'danger');
+        }
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sticky Note To-Do</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Kalam', cursive;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+        }
+        
+        .sticky-note {
+            width: 450px;
+            min-height: 500px;
+            background: #feff9c;
+            padding: 40px;
+            box-shadow: 
+                0 8px 16px rgba(0,0,0,0.15),
+                0 16px 32px rgba(0,0,0,0.1);
+            transform: rotate(-3deg);
+            position: relative;
+        }
+        
+        .sticky-note::before {
+            content: '';
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 25px;
+            background: rgba(0,0,0,0.1);
+            border-radius: 0 0 8px 8px;
+        }
+        
+        .note-title {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 30px;
+            color: #333;
+            text-align: center;
+            border-bottom: 2px dashed rgba(0,0,0,0.2);
+            padding-bottom: 20px;
+        }
+        
+        .todo-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            font-size: 20px;
+            color: #444;
+        }
+        
+        .todo-checkbox {
+            width: 22px;
+            height: 22px;
+            margin-right: 18px;
+            cursor: pointer;
+            accent-color: #333;
+        }
+        
+        .todo-text {
+            flex: 1;
+            line-height: 1.4;
+        }
+        
+        .todo-text.completed {
+            text-decoration: line-through !important;
+            opacity: 0.6 !important;
+            color: #888 !important;
+        }
+        
+        .delete-btn {
+            background: none;
+            border: none;
+            color: #999;
+            cursor: pointer;
+            font-size: 18px;
+            margin-left: 10px;
+            opacity: 0;
+            transition: all 0.2s ease;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+        }
+        
+        .todo-item:hover .delete-btn {
+            opacity: 1;
+        }
+        
+        .delete-btn:hover {
+            color: #ff4444;
+            background: rgba(255, 68, 68, 0.1);
+        }
+        
+        .add-todo {
+            display: flex;
+            margin-top: 35px;
+            gap: 12px;
+        }
+        
+        .add-input {
+            flex: 1;
+            border: none;
+            background: rgba(255,255,255,0.4);
+            padding: 14px 18px;
+            border-radius: 22px;
+            font-family: 'Kalam', cursive;
+            font-size: 18px;
+            outline: none;
+            color: #333;
+        }
+        
+        .add-input:focus {
+            background: rgba(255,255,255,0.7);
+        }
+        
+        .add-input::placeholder {
+            color: #666;
+        }
+        
+        .add-btn {
+            background: #333;
+            color: white;
+            border: none;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 22px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .add-btn:hover {
+            background: #555;
+            transform: scale(1.1);
+        }
+        
+        .empty-state {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            margin: 40px 0;
+            font-size: 16px;
+        }
+        
+        
+        @media (max-width: 480px) {
+            .sticky-note {
+                width: 90vw;
+                max-width: 350px;
+                padding: 25px;
+                transform: rotate(-2deg);
+            }
+            
+            .note-title {
+                font-size: 24px;
+            }
+            
+            .todo-item {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    {% block content %}{% endblock %}
+    
+    <script>
+        function toggleTask(taskId, checkbox) {
+            console.log('toggleTask called with:', taskId, checkbox.checked);
+            
+            const todoItem = checkbox.closest('.todo-item');
+            const todoText = todoItem.querySelector('.todo-text');
+            
+            console.log('Found elements:', { todoItem, todoText });
+            
+            if (checkbox.checked) {
+                // Mark as completed visually
+                todoText.classList.add('completed');
+                console.log('Classes after adding:', todoText.className);
+                
+                
+                // Update server
+                fetch(`/api/task/${taskId}/complete`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'}
+                }).then(response => {
+                    console.log('Server response:', response.status);
+                }).catch(error => {
+                    console.error('Server error:', error);
+                });
+            } else {
+                // Uncheck
+                todoText.classList.remove('completed');
+                console.log('Classes after removing:', todoText.className);
+            }
+        }
+        
+        function deleteTask(taskId) {
+            if (confirm('Delete this task?')) {
+                fetch(`/api/task/${taskId}/delete`, {
+                    method: 'DELETE',
+                    headers: {'Content-Type': 'application/json'}
+                }).then(() => location.reload());
+            }
+        }
+        
+        function addTask(form, event) {
+            event.preventDefault(); // Prevent form submission
+            const input = form.querySelector('.add-input');
+            if (input.value.trim()) {
+                fetch('/api/task', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        title: input.value.trim(),
+                        description: '',
+                        priority: '🟡',
+                        tags: ''
+                    })
+                }).then(() => location.reload());
+            }
+        }
+        
+        // Enter key support
+        document.addEventListener('keypress', function(e) {
+            if (e.target.classList.contains('add-input') && e.key === 'Enter') {
+                e.preventDefault();
+                const form = e.target.closest('form');
+                addTask(form, e);
+            }
+        });
+        
+    </script>
+</body>
+</html>
